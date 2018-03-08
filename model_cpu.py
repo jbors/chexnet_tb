@@ -20,15 +20,15 @@ from sklearn.metrics import roc_auc_score
 
 USE_DENSENET = False
 CKPT_PATH = 'model.pth.tar'
-N_CLASSES = 1
-CLASS_NAMES = [ 'Tuberculosis']
+N_CLASSES = 2
+CLASS_NAMES = [ 'Tuberculosis', 'Clean']
 DATA_DIR = './XRAY_images/images'
 TRAIN_IMAGE_LIST = './XRAY_images/labels/train_list.txt'
 TEST_IMAGE_LIST = './XRAY_images/labels/test_list.txt'
 
 # Currently on small vals for local evaluation
-BATCH_SIZE = 4 #64
-RUNS = 1 #100
+BATCH_SIZE = 4 #4 #64
+RUNS = 50 #100
 
 
 def main():
@@ -42,8 +42,6 @@ def main():
     print(model)
 
     model = torch.nn.DataParallel(model).cpu()
-
-    #TODO: Is sigmoid over linear the best last layer for training?
 
     if(USE_DENSENET):
         if os.path.isfile(CKPT_PATH):
@@ -62,20 +60,22 @@ def main():
                                     image_list_file=TRAIN_IMAGE_LIST,
                                     transform=transforms.Compose([
                                         transforms.Resize(256),
+                                        #TODO: we should probably get rid of the tencrop in training?
+                                        # Or at least not take the mean??
                                         transforms.TenCrop(224),
                                         transforms.Lambda
                                         (lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
                                         transforms.Lambda
                                         (lambda crops: torch.stack([normalize(crop) for crop in crops]))
-                                    ]))
+                                    ])
+    )
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=8, pin_memory=True)
 
-    #criterion = nn.CrossEntropyLoss().cpu()
-    criterion = nn.BCEWithLogitsLoss().cpu()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-    #everything goes to 0. Should we normalize or something?? or use 1/-1??
+    # criterion = nn.CrossEntropyLoss().cpu()
+    criterion = nn.BCELoss().cpu()
+    # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.Adam(model.parameters())
 
     for epoch in range(0, RUNS):
         print("Epoch " + str(epoch + 1))
@@ -124,6 +124,7 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
     model.train()
 
     running_loss = 0.0
+    iterations = 0
     for i, (inp, target) in enumerate(train_loader):
         target = target.cpu()
         bs, n_crops, c, h, w = inp.size()
@@ -138,18 +139,21 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
         print("target " + str(target_var))
 
         loss = criterion(output_mean, target_var)
+        print("loss" + str(loss))
         loss.backward()
         optimizer.step()
 
-        #print("Did a run!")
-
         # print statistics
         running_loss += loss.data[0]
+        iterations += 1
         if i % 10 == 9:  # print every 10 mini-batches
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 10))
             running_loss = 0.0
+            iterations = 0;
 
+    print('[%d, %5d] final loss: %.3f' %
+          (epoch + 1, iterations + 1, running_loss / (iterations + 1)))
 
 def compute_AUCs(gt, pred):
     """Computes Area Under the Curve (AUC) from prediction scores.
