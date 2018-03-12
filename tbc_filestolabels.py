@@ -7,8 +7,8 @@ Anything ending in _1.png is a positive example, negative otherwise.
 import os
 from random import randint
 
-SOURCE_DIR = "./ChestX-ray14/images/"
-TARGET_DIR = "./ChestX-ray14/labels/"
+SOURCE_DIR = "./XRAY_images/images/"
+TARGET_DIR = "./XRAY_images/labels/"
 
 train_file = open(TARGET_DIR + 'train_list.txt', "w")
 test_file = open(TARGET_DIR + 'test_list.txt', "w")
