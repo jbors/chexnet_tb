@@ -16,9 +16,9 @@ val_file = open(TARGET_DIR + 'val_list.txt', "w")
 
 for filename in os.listdir(SOURCE_DIR):
     if filename.endswith(".png"):
-        line = filename + " 0 1\n"
+        line = filename + " 0\n"
         if filename.endswith("_1.png"):
-            line = filename + " 1 0\n"
+            line = filename + " 1\n"
         cutoff = randint(0, 100)
         if cutoff < 80:
             train_file.write(line)

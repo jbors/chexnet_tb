@@ -20,8 +20,8 @@ from sklearn.metrics import roc_auc_score
 
 USE_DENSENET = False
 CKPT_PATH = 'model.pth.tar'
-N_CLASSES = 2
-CLASS_NAMES = [ 'Tuberculosis', 'Clean']
+N_CLASSES = 1
+CLASS_NAMES = [ 'Tuberculosis']
 DATA_DIR = './XRAY_images/images'
 TRAIN_IMAGE_LIST = './XRAY_images/labels/train_list.txt'
 TEST_IMAGE_LIST = './XRAY_images/labels/test_list.txt'
@@ -34,6 +34,7 @@ RUNS = 50 #100
 def main():
 
     # initialize and load the model
+
     if USE_DENSENET:
         model = DenseNet121(N_CLASSES).cpu()
     else:
