@@ -18,6 +18,7 @@ from read_data import ChestXrayDataSet
 from sklearn.metrics import roc_auc_score
 
 
+#Change to true to use the 121 layer densenet
 USE_DENSENET = False
 CKPT_PATH = 'model.pth.tar'
 N_CLASSES = 1
@@ -26,9 +27,9 @@ DATA_DIR = './XRAY_images/images'
 TRAIN_IMAGE_LIST = './XRAY_images/labels/train_list.txt'
 TEST_IMAGE_LIST = './XRAY_images/labels/test_list.txt'
 
-# Currently on small vals for local evaluation
-BATCH_SIZE = 16 #4 #64
-RUNS = 50 #100
+# Set to smaller vals for local evaluation
+BATCH_SIZE = 64
+RUNS = 100
 
 
 def main():
@@ -68,9 +69,7 @@ def main():
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=8, pin_memory=True)
 
-    # criterion = nn.CrossEntropyLoss().cpu()
     criterion = nn.BCELoss().cpu()
-    # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     optimizer = optim.Adam(model.parameters())
 
     for epoch in range(0, RUNS):
@@ -123,19 +122,11 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
     iterations = 0
     for i, (inp, target) in enumerate(train_loader):
         target = target.cpu()
-        #bs, n_crops, c, h, w = inp.size()
         bs, c, h, w = inp.size()
         input_var = Variable(inp.view(-1, c, h, w).cpu(), volatile=False)
         target_var = Variable(target)
 
         output = model(input_var)
-        print("Current output " + str(output))
-        #output_mean = output.view(bs, n_crops, -1).mean(1)
-        #print("mean output " + str(output_mean))
-
-        print("target " + str(target_var))
-
-        #loss = criterion(output_mean, target_var)
         loss = criterion(output, target_var)
         print("loss" + str(loss))
         loss.backward()
