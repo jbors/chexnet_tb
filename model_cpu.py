@@ -27,7 +27,7 @@ TRAIN_IMAGE_LIST = './XRAY_images/labels/train_list.txt'
 TEST_IMAGE_LIST = './XRAY_images/labels/test_list.txt'
 
 # Currently on small vals for local evaluation
-BATCH_SIZE = 4 #4 #64
+BATCH_SIZE = 16 #4 #64
 RUNS = 50 #100
 
 
@@ -60,14 +60,9 @@ def main():
     train_dataset = ChestXrayDataSet(data_dir=DATA_DIR,
                                     image_list_file=TRAIN_IMAGE_LIST,
                                     transform=transforms.Compose([
-                                        transforms.Resize(256),
-                                        #TODO: we should probably get rid of the tencrop in training?
-                                        # Or at least not take the mean??
-                                        transforms.TenCrop(224),
-                                        transforms.Lambda
-                                        (lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
-                                        transforms.Lambda
-                                        (lambda crops: torch.stack([normalize(crop) for crop in crops]))
+                                        transforms.Resize((224, 224)),
+                                        transforms.ToTensor(),
+                                        normalize
                                     ])
     )
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE,
@@ -128,18 +123,20 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
     iterations = 0
     for i, (inp, target) in enumerate(train_loader):
         target = target.cpu()
-        bs, n_crops, c, h, w = inp.size()
+        #bs, n_crops, c, h, w = inp.size()
+        bs, c, h, w = inp.size()
         input_var = Variable(inp.view(-1, c, h, w).cpu(), volatile=False)
         target_var = Variable(target)
 
         output = model(input_var)
         print("Current output " + str(output))
-        output_mean = output.view(bs, n_crops, -1).mean(1)
-        print("mean output " + str(output_mean))
+        #output_mean = output.view(bs, n_crops, -1).mean(1)
+        #print("mean output " + str(output_mean))
 
         print("target " + str(target_var))
 
-        loss = criterion(output_mean, target_var)
+        #loss = criterion(output_mean, target_var)
+        loss = criterion(output, target_var)
         print("loss" + str(loss))
         loss.backward()
         optimizer.step()

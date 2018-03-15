@@ -75,9 +75,7 @@ def main():
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=8, pin_memory=True)
 
-    # criterion = nn.CrossEntropyLoss().cpu()
     criterion = nn.BCELoss().cuda()
-    # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     optimizer = optim.Adam(model.parameters())
 
     for epoch in range(0, RUNS):
