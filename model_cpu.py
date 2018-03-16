@@ -26,6 +26,7 @@ CLASS_NAMES = [ 'Tuberculosis']
 DATA_DIR = './XRAY_images/images'
 TRAIN_IMAGE_LIST = './XRAY_images/labels/train_list.txt'
 TEST_IMAGE_LIST = './XRAY_images/labels/test_list.txt'
+VAL_IMAGE_LIST = './XRAY_images/labels/val_list.txt'
 
 # Set to smaller vals for local evaluation
 BATCH_SIZE = 64
@@ -69,12 +70,26 @@ def main():
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=8, pin_memory=True)
 
+
+    val_dataset = ChestXrayDataSet(data_dir=DATA_DIR,
+                                    image_list_file=VAL_IMAGE_LIST,
+                                    transform=transforms.Compose([
+                                        transforms.Resize((224, 224)),
+                                        transforms.ToTensor(),
+                                        normalize
+                                    ])
+    )
+    val_loader = DataLoader(dataset=val_dataset, batch_size=BATCH_SIZE,
+                             shuffle=True, num_workers=8, pin_memory=True)
+
+
     criterion = nn.BCELoss().cpu()
     optimizer = optim.Adam(model.parameters())
 
     for epoch in range(0, RUNS):
         print("Epoch " + str(epoch + 1))
         train_run(model, train_loader, optimizer, criterion, epoch)
+        val_run(model, val_loader, criterion, epoch)
 
     test_dataset = ChestXrayDataSet(data_dir=DATA_DIR,
                                     image_list_file=TEST_IMAGE_LIST,
@@ -128,7 +143,7 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
 
         output = model(input_var)
         loss = criterion(output, target_var)
-        print("loss" + str(loss))
+        #print("loss" + str(loss))
         loss.backward()
         optimizer.step()
 
@@ -143,6 +158,34 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
 
     print('[%d, %5d] final loss: %.3f' %
           (epoch + 1, iterations + 1, running_loss / (iterations + 1)))
+
+
+def val_run(model, train_loader, criterion, epoch):
+    #Set eval mode
+    model.eval()
+
+    running_loss = 0.0
+    iterations = 0
+    for i, (inp, target) in enumerate(train_loader):
+        target = target.cpu()
+        bs, c, h, w = inp.size()
+        input_var = Variable(inp.view(-1, c, h, w).cpu(), volatile=False)
+        target_var = Variable(target)
+
+        output = model(input_var)
+        loss = criterion(output, target_var)
+        #print("loss" + str(loss))
+
+        running_loss += loss.data[0]
+        iterations += 1
+
+    # print statistics after run
+    if(iterations > 0):
+        print('[%d, %5d] final validation loss: %.3f' %
+              (epoch + 1, iterations, running_loss / iterations))
+    else:
+        print('No validation images found')
+
 
 def compute_AUCs(gt, pred):
     """Computes Area Under the Curve (AUC) from prediction scores.

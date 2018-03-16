@@ -1,6 +1,7 @@
 # chexnet_tb
 Trying to adapt CheXNet approach for classifying Tuberculosis in Lung X-Rays. Code modified from
-https://github.com/arnoweng/CheXNet. Uses the Montgomery County X-ray Set.
+https://github.com/arnoweng/CheXNet. Uses the Montgomery County X-ray Set and the Shenzen Hospital 
+X-ray Set.
 
 Work in progress...
 
