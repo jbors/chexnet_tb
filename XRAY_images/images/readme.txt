@@ -1,1 +1,1 @@
-Unzip montgomeryset images here
+Unzip montgomeryset and chinaset images here

@@ -1,2 +1,2 @@
-XRAY_images/images/
+XRAY_images/images/*.png
 .idea/
