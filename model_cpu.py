@@ -150,14 +150,15 @@ def train_run(model, train_loader, optimizer, criterion, epoch):
         # print statistics
         running_loss += loss.data[0]
         iterations += 1
-        if i % 10 == 9:  # print every 10 mini-batches
+        if iterations % 10 == 0:  # print every 10 mini-batches
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 10))
             running_loss = 0.0
             iterations = 0;
 
-    print('[%d, %5d] final loss: %.3f' %
-          (epoch + 1, iterations + 1, running_loss / (iterations + 1)))
+    if(iterations > 0):
+        print('[%d, %5d] final loss: %.3f' %
+          (epoch + 1, iterations, running_loss / (iterations)))
 
 
 def val_run(model, train_loader, criterion, epoch):
